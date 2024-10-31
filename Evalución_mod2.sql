@@ -17,13 +17,13 @@ SELECT title as título -- Al decir "todos los nombres, de todas las películas"
 
 SELECT title as título, description as sinopsis-- 
 	FROM film
-    WHERE description LIKE description = "%amazing%"; -- No hemos encontrado ninguna película que contenga la palabra "amazing". 
+    WHERE description LIKE "%amazing%"; -- Usando el LIKE buscamos patrones que contengan en algún momento la palabra "amazing". 
 
 -- 4. Encuentra el título de todas las películas que tengan una duración mayor a 120 minutos.
 
 SELECT title as título
 	FROM film
-    WHERE length > "120"; -- Usamos la columna de duración "length" que sea mayor que "120". 
+    WHERE length > 120; -- Usamos la columna de duración "length" que sea mayor que "120". 
 
 -- 5. Recupera los nombres de todos los actores.
 
@@ -44,26 +44,26 @@ SELECT first_name as nombre, last_name as apellido, actor_id as núm_identificat
 
 -- 8. Encuentra el título de las películas en la tabla film que no sean ni "R" ni "PG-13" en cuanto a su clasificación.
 
-SELECT title  as título-- 
+SELECT title  as título
 	FROM film
-    WHERE rating NOT IN ("R","PG-13"); -- Podríamos hacerlo combinando el WHERE y el OR/AND pero normalmente usamos el NOT IN en buenas prácticas para no obtener una lista muy larga de condiciones. 
+    WHERE rating NOT IN ("R","PG-13"); -- Esta es la forma más limpia de resolver este código. 
     
-SELECT title as título -- 
+SELECT title as título 
 	FROM film
-    WHERE rating IS NOT "R"
-    AND rating IS NOT "PG-13"; -- En este caso, con el WHERE y en AND nos da eror porque normalmente el IS NOT se usa con el NULL. 
+    WHERE rating <> "R"
+    AND rating <> "PG-13"; -- Pero también lo podemos hacer de esta manera con operadores de comparación. 
     
 SELECT title as título -- 
 	FROM film
     WHERE rating != "R"
-    AND rating != "PG-13"; -- Esta es otra forma de resolver el ejericio con el operador de comparación != para que sea distinto. 
+    AND rating != "PG-13"; -- Y esta es otra forma de resolver el ejercicio con el operador de comparación != para que sea distinto. 
 
 -- 9. Encuentra la cantidad total de películas en cada clasificación de la tabla film y muestra la clasificación junto con el recuento.
 
-SELECT film_id, title as título,rating as clasificación -- Al decir "cantidad total de películas" hemos empezado a usar un COUNT que en realidad no necesitaba, lo único que necesitamos es un GROUP BY para agrupar la clasificación. 
-	FROM film                -- Hay que hacer un INNER JOIN para saber el INVENTORY y cuántas pelis hay para cada título? 
-    GROUP BY film_id;
-
+SELECT rating as clasificación, COUNT(rating) as recuento
+	FROM film                
+    GROUP BY rating; -- Solo nos tenemos que fijar en el rating y en su recuento total con el COUNT.  
+    
 -- 10. Encuentra la cantidad total de películas alquiladas por cada cliente y muestra el ID del cliente, su nombre y apellido junto con la cantidad de películas alquiladas.
 
 SELECT c.customer_id as núm_cliente, c.first_name as nombre_cliente, c.last_name as apellido_cliente, COUNT(rental_id) as total_alquileres-- La query correcta es COUNT porque si usamos SUM nos suma todos los rental_ID's de las películas y en este caso, no tiene sentido porque no queremos sumar identificadores sino contar las pelis que se han alquilado. 
@@ -103,9 +103,9 @@ SELECT cat.name as categoría, COUNT(r.rental_id) as total_alquileres -- Para po
     
     -- 12. Encuentra el promedio de duración de las películas para cada clasificación de la tabla film y muestra la clasificación junto con el promedio de duración.
     
-    SELECT title as título,rating as clasificación, AVG(length) as promedio_duración -- Añdimos también el título para poder entender un poco la tabla final. 
+    SELECT rating as clasificación, AVG(length) as promedio_duración -- Usamos el AVG para saber el promedio y agrupamos por rating. 
 		FROM film
-        GROUP BY title, rating;
+        GROUP BY rating;
         
 -- 13. Encuentra el nombre y apellido de los actores que aparecen en la película con title "Indian Love".
 
@@ -167,32 +167,30 @@ SELECT a.first_name as nombre_act, a.last_name as apellido_act
     HAVING COUNT(fa.film_id) > 10;  -- Debemos contar el film_id porque si contamos el actor_id nos aparecerán actores que tengan un if mayor que 10 y si no aplicamos el count no se contarán
 									-- el total de películas donde aparecen. Hacemos un HAVING porque realizamos este conteo tras agrupar a los actores y actrices. 
                                     
--- 19. Encuentra el título de todas las películas que son "R" y tienen una duración mayor a 2 horas en la tabla film. NO ENTIENDO QUÉ ES QUE SON R. 
+-- 19. Encuentra el título de todas las películas que son "R" y tienen una duración mayor a 2 horas en la tabla film. 
 
 SELECT title as título, length as duración, rating as clasificación 
 	FROM film as f
     WHERE length = 120 -- Hemos traducido las horas a minutos tal y como está en la tabla de film y en la columna de length. 
-    AND rating LIKE "%R%" -- Debemos usar el AND porque el enunciado nos pide que se cumplan ambas condiciones.  
-    GROUP BY title, length, rating; -- Entendemos que la R es una clasificación pero como no estamos seguras, preferimos usar un patrñon de R con el LIKE para que, al menos, la contenga. 
+    AND rating LIKE "%R%"; -- Debemos usar el AND porque el enunciado nos pide que se cumplan ambas condiciones.  
     
 -- Tras haber solucionado el ejercicio, descubrimos que R es = a Restricted (películas para mayores de 18). Así que ahora podemos resolver el ejercicio igualando directamente, sin patrones. 
 
 SELECT title as título, length as duración, rating as clasificación 
 	FROM film as f
     WHERE length = 120 -- Hemos traducido las horas a minutos tal y como está en la tabla de film y en la columna de length. 
-    AND rating = "R" -- Debemos usar el AND porque el enunciado nos pide que se cumplan ambas condiciones.  
-    GROUP BY title, length, rating;
+    AND rating = "R"; -- Igualamos directamente sin patrones. 
 
 -- 20. Encuentra las categorías de películas que tienen un promedio de duración superior a 120 minutos y muestra el nombre de la categoría junto con el promedio de duración.
 
-SELECT cat.name as nombre_cat, AVG(length) as duración
+SELECT cat.name as nombre_cat, AVG(length) as duración 
 	FROM film as f
     INNER JOIN film_category
     USING (film_id)
     INNER JOIN category as cat
     USING (category_id)
-    WHERE length > 120 -- Añadimos esta condición antes de la agrupación del GROUP BY porque es independiente a ésta. 
-    GROUP BY cat.name;
+    GROUP BY cat.name
+    HAVING AVG(f.length) > 120; -- Si no añadimos esta condición tras la agrupación del GROUP BY, no sabremos la media de duración. 
 
 -- 21. Encuentra los actores que han actuado en al menos 5 películas y muestra el nombre del actor junto con la cantidad de películas en las que han actuado.
 
@@ -212,13 +210,13 @@ SELECT title as título -- Esta es nuestra query madre.
 	FROM films;
     
 -- Necesitamos la info de las fechas que ya tenemos en la tabla film (tabla madre) pero también necesitamos la "inventory" para saber qué películas están alquiladas. 
--- Una ves hagamos este JOIN necesitamos el rental_date y el return date de la tabla rental sea mayor que 5. Para esto, necesitamos hacer una resta de ambas fechas con el método DATEDIFF. 
+-- Una vez hagamos este JOIN necesitamos el rental_date y el return date de la tabla rental sea mayor que 5. Para esto, necesitamos hacer una resta de ambas fechas con el método DATEDIFF. 
     
 SELECT i.film_id
 	FROM rental as r 
 	INNER JOIN inventory as i
 	USING(inventory_id)
-	WHERE DATEDIFF(return_date, rental_date) > 5;
+	WHERE DATEDIFF(r.return_date, r.rental_date) > 5;
     
     -- Ahora ya podemos unir nuestras dos queries con el WHERE y el id_ de las películas. 
     
@@ -229,8 +227,9 @@ SELECT i.film_id
                         FROM rental as r 
                         INNER JOIN inventory as i
                         USING(inventory_id)
-                        WHERE DATEDIFF(return_date, rental_date) > 5
+                        WHERE DATEDIFF(r.return_date, r.rental_date) > 5
                         );
+
 
 -- 23. Encuentra el nombre y apellido de los actores que no han actuado en ninguna película de la categoría "Horror". 
 -- Utiliza una subconsulta para encontrar los actores que han actuado en películas de la categoría "Horror" y luego exclúyelos de la lista de actores.
